@@ -2,7 +2,7 @@
 type: install
 version: 1.5
 name: Jahia - Digital Experience Manager
-logo: https://goo.gl/Lnkgme
+logo: /images/jahia-logo-70x70.png
 id: jahia-dem
 description:
   short: Jahia - Digital Experience Manager
