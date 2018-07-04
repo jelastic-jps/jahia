@@ -1,7 +1,7 @@
 type: update
 version: 1.5
 name: Jahia - Digital Experience Manager Restore
-logo: https://goo.gl/Lnkgme
+logo: /images/jahia-restore-logo-70x70.png
 id: jahia-dem
 description:
   short: Jahia - Digital Experience Manager Restore
