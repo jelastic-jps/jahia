@@ -1,0 +1,58 @@
+type: update
+version: 1.5
+name: Jahia - Digital Experience Manager Restore
+logo: https://goo.gl/Lnkgme
+id: jahia-dem
+description:
+  short: Jahia - Digital Experience Manager Restore
+  text: Allows to restore your Jahia environment from existing backup
+baseUrl: https://raw.githubusercontent.com/jelastic-jps/jahia/master
+
+onBeforeInit: https://raw.githubusercontent.com/jelastic-jps/jahia/master/scripts/restoreOnBeforeInit.js
+
+onInstall:
+  - if (settings.envCreated != 'true'):
+    - install:
+        jps: ${baseUrl}/cluster.yml?_r=${fn.random}
+        envName: ${settings.newEnvName}
+        region: ${settings.targetRegion}
+    - install:
+        jps: ${baseUrl}/restore.yml?_r=${fn.random}
+        envName: ${settings.newEnvName}
+        region: ${settings.targetRegion}
+        settings:
+          envCreated: 'true'
+          ftpUser: ${settings.ftpUser}
+          ftpPassword: ${settings.ftpPassword}
+          ftpHost: ${settings.ftpHost}
+          envName: ${settings.envName}
+          backupDir: ${settings.backupDir}
+          newEnvName: ${settings.newEnvName}
+          targetRegion: ${settings.targetRegion}
+  - if (settings.envCreated == 'true'): restoreBackup
+
+actions:
+  restoreBackup:
+    - cmd[proc]: |-
+        yum -y install lftp
+        sudo service tomcat stop
+        wget -q ftp://${settings.ftpUser}:${settings.ftpPassword}@${settings.ftpHost}/${settings.envName}/${settings.backupDir}/jahia.sql
+        mysql -u$DB_USER -p$DB_PASSWORD -h mysqldb < jahia.sql; rm -f jahia.sql
+        rm -rf /data; wget -q ftp://${settings.ftpUser}:${settings.ftpPassword}@${settings.ftpHost}/${settings.envName}/${settings.backupDir}/data.tar.gz; 
+        tar -xf data.tar.gz -C /; rm -f data.tar.gz; sudo service tomcat start
+      user: root
+    - cmd[es]: |-
+        yum -y install lftp
+        wget -q ftp://${settings.ftpUser}:${settings.ftpPassword}@${settings.ftpHost}/${settings.envName}/${settings.backupDir}/es.tar.gz
+        tar -xf es.tar.gz -C /
+        chown -R elasticsearch:elasticsearch /var/lib/elasticsearch/backup/
+        CT='Content-Type:application/json'
+        curl -H $CT -X POST http://${nodes.es.master.address}:9200/_all/_close
+        curl -H $CT -X PUT -d '{"type":"fs","settings":{"location":"all"}}' http://${nodes.es.master.address}:9200/_snapshot/all
+        curl -H $CT -X POST http://${nodes.es.master.address}:9200/_snapshot/all/snapshot/_restore
+        rm -f es.tar.gz
+      user: root
+    - cmd[cp]: sudo service tomcat restart
+
+success:
+  text: Application has been restored to the new environment **${settings.newEnvName}**!

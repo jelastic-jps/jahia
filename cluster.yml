@@ -1,0 +1,181 @@
+---
+type: install
+version: 1.5
+name: Jahia - Digital Experience Manager
+logo: https://goo.gl/Lnkgme
+id: jahia-dem
+description:
+  short: Jahia - Digital Experience Manager
+  text: Digital Experience Manager gives you an agile customizable platform that manages
+    your entire digital ecosystem to innovate and deliver great customer experiences,
+    foster internal collaboration and support dynamic business needs for sustainable
+    growth.
+baseUrl: https://raw.githubusercontent.com/jelastic-jps/jahia/master
+globals:
+  db_user: jahia-db-${fn.random}
+  db_pass: ${fn.password(20)}
+  redis_pass: ${fn.password(20)}
+  mngr_user: manager
+  mngr_pass: ${fn.password(20)}
+  su_pass: ${fn.password(20)}
+  java_opts:
+    -DDB_USER=${DB_USER}
+    -DDB_PASSWORD=${DB_PASSWORD}
+    -DREDIS_PASSWORD=${REDIS_PASSWORD}
+    -DMANAGER_USER=${MANAGER_USER}
+    -DMANAGER_PASSWORD=${MANAGER_PASSWORD}
+    -DSUPER_USER_PASSWORD=${SUPER_USER_PASSWORD}
+    -DHOST_NAME=$(hostname -s)
+    -XX:MaxPermSize=512m
+    -Xms=2G  
+  
+ssl: true
+skipNodeEmails: true
+nodes:  
+  - image: jahiadev/browsing:7.2.1.1
+    displayName: Browsing
+    count: 2
+    cloudlets: 64
+    nodeGroup: cp
+    links: sqldb:mysqldb
+    startServiceOnCreation: false
+    env: 
+      DB_USER: ${globals.db_user}
+      DB_PASSWORD: ${globals.db_pass}
+      MANAGER_USER: ${globals.mngr_user}
+      MANAGER_PASSWORD: ${globals.mngr_pass}
+      SUPER_USER_PASSWORD: ${globals.su_pass}
+      REDIS_PASSWORD: ${globals.redis_pass}      
+      _JAVA_OPTIONS: ${globals.java_opts}
+    volumes:
+      - /data/digital-factory-data/generated-resources
+      - /data/digital-factory-data/repository/datastore    
+    volumeMounts: 
+      /data/digital-factory-data/generated-resources:
+        sourceNodeGroup: proc
+      /data/digital-factory-data/repository/datastore:
+        sourceNodeGroup: proc 
+    
+  - image: jahiadev/processing:7.2.1.1
+    displayName: Processing
+    count: 1
+    cloudlets: 64
+    nodeGroup: proc
+    links: 
+      - sqldb:mysqldb
+      - nosqldb:redis
+    startServiceOnCreation: false
+    env: 
+      DB_USER: ${globals.db_user}
+      DB_PASSWORD: ${globals.db_pass}
+      MANAGER_USER: ${globals.mngr_user}
+      MANAGER_PASSWORD: ${globals.mngr_pass}
+      SUPER_USER_PASSWORD: ${globals.su_pass}
+      REDIS_PASSWORD: ${globals.redis_pass}
+      _JAVA_OPTIONS: ${globals.java_opts}
+
+  - image: devbeta/redis:4.0.9
+    displayName: Sessions 
+    count: 1
+    cloudlets: 64
+    nodeGroup: nosqldb
+
+
+  - nodeType: mariadb-dockerized
+    tag: 10.2.12
+    displayName: MariaDB
+    count: 1
+    cloudlets: 64
+    nodeGroup: sqldb    
+
+  - image: jahiadev/unomi:1.2.2-jdk-1.8.0_144
+    displayName: Unomi
+    count: 2
+    cloudlets: 64
+    nodeGroup: unomi
+    links: es:es
+    startServiceOnCreation: false
+
+  - image: jahiadev/elasticsearch:5.6.3-jdk-1.8.0_144
+    displayName: Elastic Search
+    count: 1
+    cloudlets: 64
+    nodeGroup: es
+
+    
+# --Events --
+
+onInstall: 
+  - setupSqlDB
+  - setupRedisPassword
+  
+  - copyApp: proc
+  - api: env.control.ExecDockerRunCmd
+    nodeId: ${nodes.proc.first.id} 
+
+  - copyApp: cp 
+  - forEach(nodes.cp):
+      api: env.control.ExecDockerRunCmd
+      nodeId: ${@i.id} 
+
+  - setupUnomi
+
+onBeforeServiceScaleOut[cp]: 
+  forEach(event.response.nodes): 
+    - copyApp: ${@i.id}
+      
+onBeforeServiceScaleOut[unomi]: updateHazelcast
+onBeforeScaleIn[unomi]: updateHazelcast   
+        
+#-- Actions --
+
+actions:
+  updateHazelcast:
+    - forEach(nodes.unomi):
+        appendNode: ${@i.id}
+    
+    - cmd[unomi]: |-
+        sed -i "/<interface>/d" $HAZELCAST_CONFIG
+        sed -i "/<member>node/d" $HAZELCAST_CONFIG
+        ids=( ${globals.ids} )
+        for i in "${ids[@]}"; do grep -q "node$i" $HAZELCAST_CONFIG || sed -i "/<tcp-ip/a \\\t\t\t\t<member>node$i</member>" $HAZELCAST_CONFIG ; done
+       
+  appendNode:
+    setGlobals: 
+      - ids: ${globals.ids:}${globals.sep:}${this}
+      - sep: ' '
+         
+  setupUnomi:
+    - updateHazelcast
+    - forEach(nodes.unomi):
+        api: env.control.ExecDockerRunCmd
+        nodeId: ${@i.id}
+    
+  setupSqlDB:
+    - cmd[sqldb]: |-
+        service mysql stop
+        wget -O /etc/my.cnf ${baseUrl}/my.cnf
+        service mysql start
+        wget -O setupUser.sh https://raw.githubusercontent.com/jelastic-jps/mysql-cluster/master/scripts/setupUser.sh
+        bash setupUser.sh ${globals.db_user} ${globals.db_pass}
+        mysql -u${globals.db_user} -p${globals.db_pass} -e "CREATE DATABASE IF NOT EXISTS jahia CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+      user: root 
+    - cmd[${nodes.proc.first.id}]: cat $DATA_PATH/digital-factory-data/db/sql/schema/mysql/*.sql | mysql -h mysqldb -u$DB_USER -p$DB_PASSWORD -f jahia
+    
+  copyApp:  
+    - cmd[${this}]: |-
+        [ "${this}" == "proc" ] && role="processing" || role="browsing" 
+        rm -rf $STACK_PATH/webapps/*
+        cp -rf $DATA_PATH/jahia/$role/tomcat/webapps/* $STACK_PATH/webapps
+        chown -R tomcat:tomcat $STACK_PATH/webapps
+        
+        cd /opt/tomcat/webapps/ROOT/WEB-INF/lib/
+        mngr_pwd=$(/usr/java/latest/bin/jjs -cp ./jahia-commons-1.0.6.jar:./jasypt-1.9.1-lite.jar -scripting <<< "print(org.jahia.commons.encryption.EncryptionUtils.pbkdf2Digest(\$ENV.MANAGER_PASSWORD, \"p\"))")
+        sed -i "s|^jahiaToolManagerPassword .*$|jahiaToolManagerPassword                               = $mngr_pwd|" $STACK_PATH/conf/digital-factory-config/jahia/jahia.properties
+        echo $SUPER_USER_PASSWORD > $DATA_PATH/digital-factory-data/root.pwd
+        chown -R tomcat:tomcat $DATA_PATH/digital-factory-data/root.pwd
+        
+  setupRedisPassword:
+    cmd[nosqldb]: jem passwd set -p ${globals.redis_pass}
+        
+success: /text/success.md
