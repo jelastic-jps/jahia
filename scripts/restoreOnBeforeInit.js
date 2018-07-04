@@ -4,7 +4,9 @@ import com.hivext.api.development.response.ScriptEvalResponse;
 
 var envList = {},
     backupList = {},
-    responseJSON = {};
+    responseJSON = {},
+    envDefaultValue,
+    backupDefaultValue;
 
 var storage = new StorageApi(session);
 var ftpCredentials = storage.initFtpCredentials();
@@ -24,34 +26,35 @@ if (envDirs.result !== 0) {
     return envDirs;
 }
 
-var envDefaultValue = "",
-    envKeywords = envDirs.keywords[0],
-    envFile, envName, i, n;
-
-for (i = 0, n = envKeywords.files.length; i < n; i += 1) {
-    envName = envKeywords.files[i].name;
-    envDefaultValue = envDefaultValue ? envDefaultValue : envName;
-    if (envName != ftpUser) {
-        envList[envName] = envName;
-    }
-}
+envList = prepareOutputDirectoryMap(envDirs, ftpUser).valuesList;
+envDefaultValue = prepareOutputDirectoryMap(envDirs, ftpUser).defaultValue;
 
 var backupDirs = storage.getBackups(envDefaultValue);
 if (backupDirs.result !== 0) {
     return backupDirs;
 }
 
-var backupDefaultValue = "",
-    backupKeywords, backupFile, backupName, i, n;
+backupList = prepareOutputDirectoryMap(backupDirs, envDefaultValue).valuesList;
+backupDefaultValue = prepareOutputDirectoryMap(backupDirs, envDefaultValue).defaultValue;
 
-backupKeywords = backupDirs.keywords[0];
+function prepareOutputDirectoryMap(directories, parentDirectory) {
+    var DefaultValue = "",
+        Keywords = directories.keywords[0],
+        File, Name, List = {},
+        i, n;
 
-for (i = 0, n = backupKeywords.files.length; i < n; i += 1) {
-    backupName = backupKeywords.files[i].name;
-    backupDefaultValue = backupDefaultValue ? backupDefaultValue : backupName;
-    if (backupName != envDefaultValue) {
-        backupList[backupName] = backupName;
+    for (i = 0, n = Keywords.files.length; i < n; i += 1) {
+        Name = Keywords.files[i].name;
+        DefaultValue = DefaultValue ? DefaultValue : Name;
+        if (Name != parentDirectory) {
+            List[Name] = Name;
+        }
     }
+    var result = {
+        defaultValue: DefaultValue,
+        valuesList: List
+    }
+    return result;
 }
 
 var responseJSON = {
