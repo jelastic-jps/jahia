@@ -18,6 +18,7 @@ globals:
   mngr_user: manager
   mngr_pass: ${fn.password(20)}
   su_pass: ${fn.password(20)}
+  xms: 2G
   java_opts:
     -DDB_USER=${DB_USER}
     -DDB_PASSWORD=${DB_PASSWORD}
@@ -27,8 +28,8 @@ globals:
     -DSUPER_USER_PASSWORD=${SUPER_USER_PASSWORD}
     -DHOST_NAME=$(hostname -s)
     -XX:MaxPermSize=512m
-    -Xms=2G  
   
+ 
 ssl: true
 skipNodeEmails: true
 nodes:  
@@ -45,7 +46,8 @@ nodes:
       MANAGER_USER: ${globals.mngr_user}
       MANAGER_PASSWORD: ${globals.mngr_pass}
       SUPER_USER_PASSWORD: ${globals.su_pass}
-      REDIS_PASSWORD: ${globals.redis_pass}      
+      REDIS_PASSWORD: ${globals.redis_pass}
+      XMS: ${globals.xms}
       _JAVA_OPTIONS: ${globals.java_opts}
     volumes:
       - /data/digital-factory-data/generated-resources
@@ -72,6 +74,7 @@ nodes:
       MANAGER_PASSWORD: ${globals.mngr_pass}
       SUPER_USER_PASSWORD: ${globals.su_pass}
       REDIS_PASSWORD: ${globals.redis_pass}
+      XMS: ${globals.xms}
       _JAVA_OPTIONS: ${globals.java_opts}
 
   - image: devbeta/redis:4.0.9
