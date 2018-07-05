@@ -77,6 +77,23 @@ function JahiaStorage(appid, session, envName, nodeGroup) {
         return jelastic.env.file.GetList(envName, signature, path, nodeGroup);
     };
 
+    this.getUserData = function () {
+        var userData = {};
+        
+        var resp = this.getEnvs();
+        if (resp.result !== 0) return resp;
+        userData.keywords = resp.keywords;
+        
+        resp = this.initUser();
+        if (resp.result !== 0) return resp;
+        userData.credentials = resp.credentials;
+        
+        userData.result = 0;
+
+        return userData;
+    };
+
+
     this.getBackups = function (targetEnvName) {
         var resp = this.initUser();
         if (resp.result !== 0) return resp;
