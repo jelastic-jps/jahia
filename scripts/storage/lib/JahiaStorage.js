@@ -24,8 +24,7 @@ function JahiaStorage(appid, session, envName, nodeGroup) {
     };
 
     this.initUser = function () {
-        var uid;
-            resp;
+        var uid, resp;
         
         if (!currentFtpUser) {
             uid = this.getCurrentPlatformUser().uid;
