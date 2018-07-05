@@ -5,41 +5,11 @@ import org.jasypt.hibernate4.encryptor.HibernatePBEStringEncryptor;
 
 function JahiaStorage(appid, session, envName, nodeGroup) {
     var TABLE_USER_CREDENTIALS = "ftpJahiaUserCredentials",
-        PRIVATE_TOKEN = "ayqH_8tmKgD8M7ina5Fd",
         db = jelastic.data.base,
-        currentFtpUser,
+        currentFtpUser,        
         global;
 
     nodeGroup = nodeGroup || "storage";
-
-    this.auth = function (token) {
-        var user = this.getCurrentPlatformUser(),
-            generatedToken,
-            decryptedToken,
-            encryptor;
-
-        if (user) {
-            generatedToken = jelastic.local.utils.MD5(user.email + PRIVATE_TOKEN + user.session);
-            encryptor = new HibernatePBEStringEncryptor();
-
-            try {
-                encryptor.setPassword(PRIVATE_TOKEN);
-                decryptedToken = encryptor.decrypt(token);
-            } catch (ex) {}
-        }
-
-        if (!decryptedToken || String(decryptedToken) !== String(generatedToken)) {
-            return {
-                result: Response.PERMISSION_DENIED,
-                error: "wrong token",
-                type:"error",
-                message:"Token [" + token + "] does not match",
-                response: { result: Response.PERMISSION_DENIED }
-            };
-        }
-
-        return { result : 0 };
-    };
 
     this.initDB = function initDB() {
         var resp = db.DefineType(appid, signature, TABLE_USER_CREDENTIALS, {
@@ -54,18 +24,21 @@ function JahiaStorage(appid, session, envName, nodeGroup) {
     };
 
     this.initUser = function () {
-        var uid = this.getCurrentPlatformUser().uid,
+        var uid;
             resp;
+        
+        if (!currentFtpUser) {
+            uid = this.getCurrentPlatformUser().uid;
+            resp = this.getUser(uid);
 
-        resp = this.getUser(uid);
+            if (uid > -1 && resp.result === Response.OBJECT_NOT_EXIST) {
+                resp = this.createUser(uid);
+            }
 
-        if (uid > -1 && resp.result === Response.OBJECT_NOT_EXIST) {
-            resp = this.createUser(uid);
+            currentFtpUser = resp;
         }
-
-        currentFtpUser = resp;
-
-        return resp;
+        
+        return currentFtpUser;
     };
 
     this.getEnvs = function () {
@@ -82,7 +55,7 @@ function JahiaStorage(appid, session, envName, nodeGroup) {
         
         var resp = this.getEnvs();
         if (resp.result !== 0) return resp;
-        userData.keywords = resp.keywords;
+        userData.envs = resp.keywords;
         
         resp = this.initUser();
         if (resp.result !== 0) return resp;
