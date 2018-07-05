@@ -1,110 +1,117 @@
 //@auth
-
 import com.hivext.api.core.utils.Transport;
 import com.hivext.api.development.response.ScriptEvalResponse;
 
-function getUserData() {
+var envList = {},
+    backupList = {},
+    responseJSON = {},
+    envDefaultValue, backupDefaultValue;
 
-    var envList = {},
-        backupList = {},
-        responseJSON = {},
-        envDefaultValue, backupDefaultValue;
+var storage = new StorageApi(session);
 
-    var storage = new StorageApi(session);
-    var ftpCredentials = storage.initFtpCredentials();
-    if (ftpCredentials.result !== 0) return ftpCredentials;
+var userData = storage.getUserData();
+if (userData.result !== 0) return userData;
 
-    var ftpUser = ftpCredentials.credentials.ftpUser;
-    var ftpPassword = ftpCredentials.credentials.ftpPassword;
+var ftpUser = userData.ftpCredentials.ftpUser;
+var ftpPassword = userData.ftpCredentials.ftpPassword;
 
-    var ftpHost = storage.getFtpHost();
+envList = prepareOutputDirectoryMap(userData.envDirs, ftpUser);
 
-    var envDirs = storage.getEnvs();
-    if (envDirs.result !== 0) {
-        return envDirs;
-    }
-
-    envList = prepareOutputDirectoryMap(envDirs, ftpUser);
-
-    var backupDirs = storage.getBackups(envList.defaultValue);
-    if (backupDirs.result !== 0) {
-        return backupDirs;
-    }
-
-    backupList = prepareOutputDirectoryMap(backupDirs, envList.defaultValue);
-
-    function prepareOutputDirectoryMap(directories, parentDirectory) {
-        var DefaultValue = "",
-            Keywords = directories.keywords[0],
-            File, Name, List = {},
-            i, n;
-
-	DefaultValue = Keywords.files[0].name;
-        for (i = 0, n = Keywords.files.length; i < n; i += 1) {
-            Name = Keywords.files[i].name;
-            if (Name != parentDirectory) {
-                List[Name] = Name;
-            }
-        }
-        var result = {
-            defaultValue: DefaultValue,
-            valuesList: List
-        }
-        return result;
-    }
-
-    var responseJSON = {
-        result: 0,
-        settings: {
-            fields: [{
-                "caption": "Restore from",
-                "type": "list",
-                "name": "envName",
-                "default": envList.defaultValue,
-                "values": envList.valuesList
-            }, {
-                "type": "string",
-                "inputType": "hidden",
-                "name": "ftpUser",
-                "default": ftpUser
-            }, {
-                "type": "string",
-                "inputType": "hidden",
-                "name": "ftpHost",
-                "default": ftpHost
-            }, {
-                "type": "string",
-                "inputType": "hidden",
-                "name": "ftpPassword",
-                "default": ftpPassword
-            }, {
-                "caption": "Backup",
-                "type": "list",
-                "name": "backupDir",
-                "default": backupList.defaultValue,
-                "values": backupList.valuesList
-            }, {
-                "caption": "Restore to",
-                "type": "string",
-                "name": "newEnvName"
-            }, {
-                "caption": "Target region",
-                "type": "regionlist",
-                "name": "targetRegion",
-                "editable": true,
-                "disableInactive": true,
-                "selectFirstAvailable": true,
-                "message": "unavailable region"
-            }]
-        }
-    }
-
-    return responseJSON;
-
+var backupDirs = storage.getBackups(envList.defaultValue);
+if (backupDirs.result !== 0) {
+    return backupDirs;
 }
+
+backupList = prepareOutputDirectoryMap(backupDirs, envList.defaultValue);
+
+function prepareOutputDirectoryMap(directories, parentDirectory) {
+    var DefaultValue = "",
+        Keywords = directories.keywords[0],
+        File, Name, List = {},
+        i, n;
+
+    DefaultValue = Keywords.files[0].name;
+    for (i = 0, n = Keywords.files.length; i < n; i += 1) {
+        Name = Keywords.files[i].name;
+        if (Name != parentDirectory) {
+            List[Name] = Name;
+        }
+    }
+    var result = {
+        defaultValue: DefaultValue,
+        valuesList: List
+    }
+    return result;
+}
+
+var responseJSON = {
+    result: 0,
+    settings: {
+        fields: [{
+            "caption": "Restore from",
+            "type": "list",
+            "name": "envName",
+            "default": envList.defaultValue,
+            "values": envList.valuesList
+        }, {
+            "type": "string",
+            "inputType": "hidden",
+            "name": "ftpUser",
+            "default": ftpUser
+        }, {
+            "type": "string",
+            "inputType": "hidden",
+            "name": "ftpHost",
+            "default": userData.ftpHost
+        }, {
+            "type": "string",
+            "inputType": "hidden",
+            "name": "ftpPassword",
+            "default": ftpPassword
+        }, {
+            "caption": "Backup",
+            "type": "list",
+            "name": "backupDir",
+            "default": backupList.defaultValue,
+            "values": backupList.valuesList
+        }, {
+            "caption": "Restore to",
+            "type": "string",
+            "name": "newEnvName"
+        }, {
+            "caption": "Target region",
+            "type": "regionlist",
+            "name": "targetRegion",
+            "editable": true,
+            "disableInactive": true,
+            "selectFirstAvailable": true,
+            "message": "unavailable region"
+        }]
+    }
+}
+
+return responseJSON;
 
 function StorageApi(session, storageAppid, ftpHost) {
     var SOURCE = "remote-storage";
+
+    this.getUserData = function getUserData() {
+        var ftpCredentials = this.initFtpCredentials();
+        if (ftpCredentials.result !== 0) {
+            return ftpCredentials;
+        }
+        var envDirs = this.getEnvs();
+        if (envDirs.result !== 0) {
+            return envDirs;
+        }
+
+        return {
+            result: 0,
+            ftpHost: this.getFtpHost(),
+            ftpCredentials: ftpCredentials,
+            envDirs: envDirs
+        }
+    };
 
     this.getEnvs = function getEnvs() {
         return this.eval("GetEnvs");
@@ -170,5 +177,3 @@ function StorageApi(session, storageAppid, ftpHost) {
 
     this.initSettings();
 }
-
-return getUserData();
