@@ -157,7 +157,7 @@ actions:
   setupSqlDB:
     - cmd[sqldb]: |-
         service mysql stop
-        wget -O /etc/my.cnf ${baseUrl}/my.cnf
+        wget -O /etc/my.cnf ${baseUrl}/configs/my.cnf
         service mysql start
         wget -O setupUser.sh https://raw.githubusercontent.com/jelastic-jps/mysql-cluster/master/scripts/setupUser.sh
         bash setupUser.sh ${globals.db_user} ${globals.db_pass}
