@@ -6,12 +6,15 @@ ENV_LIST=$(ls -Qm /backups/${USER})
 
 OUTPUT_JSON="{\"result\": 0, \"envs\": [${ENV_LIST}], \"backups\": {"
 
-for i in $(ls /backups/${USER})
-do
-    DIRECTORY_LIST=$(ls -Qm /backups/${USER}/${i})
-    OUTPUT_JSON="${OUTPUT_JSON}\"${i}\":[${DIRECTORY_LIST}],"
-done
+if [ -n "$ENV_LIST" ]; then
 
-OUTPUT_JSON=${OUTPUT_JSON::-1}}}
+    for i in $(ls /backups/${USER})
+    do
+        DIRECTORY_LIST=$(ls -Qm /backups/${USER}/${i})
+        OUTPUT_JSON="${OUTPUT_JSON}\"${i}\":[${DIRECTORY_LIST}],"
+    done
 
-echo $OUTPUT_JSON
+    OUTPUT_JSON=${OUTPUT_JSON::-1}
+fi
+
+echo $OUTPUT_JSON}}
