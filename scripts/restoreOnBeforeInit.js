@@ -10,10 +10,11 @@ var envList = {},
 var storage = new StorageApi(session);
 
 var userData = storage.getUserData();
-if (userData.result !== 0) return userData;
 
-var ftpUser = userData.ftpCredentials.ftpUser;
-var ftpPassword = userData.ftpCredentials.ftpPassword;
+return userData;
+
+var ftpUser = userData.credentials.ftpUser;
+var ftpPassword = userData.credentials.ftpPassword;
 
 envList = prepareOutputDirectoryMap(userData.envDirs, ftpUser);
 
@@ -96,21 +97,10 @@ function StorageApi(session, storageAppid, ftpHost) {
     var SOURCE = "remote-storage";
 
     this.getUserData = function getUserData() {
-        var ftpCredentials = this.initFtpCredentials();
-        if (ftpCredentials.result !== 0) {
-            return ftpCredentials;
-        }
-        var envDirs = this.getEnvs();
-        if (envDirs.result !== 0) {
-            return envDirs;
-        }
-
-        return {
-            result: 0,
-            ftpHost: this.getFtpHost(),
-            ftpCredentials: ftpCredentials,
-            envDirs: envDirs
-        }
+        var userData = this.eval("GetUserData");
+        if (userData.result !== 0) return userData;
+        userData.ftpHost = this.getFtpHost();
+        return userData;
     };
 
     this.getEnvs = function getEnvs() {
