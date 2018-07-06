@@ -6,19 +6,21 @@ id: jahia-dem
 description:
   short: Jahia - Digital Experience Manager Backup Storage
   text: Creates the FTP server for storing the user backups
-baseUrl: https://git.jelastic.com/jahia/jps/raw/restore
+baseUrl: https://raw.githubusercontent.com/jelastic-jps/jahia/master
 
 nodes:
   - nodeType: storage
     count: 1
     cloudlets: 8
     
-onInstall: installFTPAddon
+onInstall: configureStorage
 
 actions:
-  installFTPAddon:
-    script: |
-      return jelastic.env.control.InstallSoftwarePackage('${env.envName}', session, 'storage', 'ftp', 'storage');
+  configureStorage:
+    - script: |
+        return jelastic.env.control.InstallSoftwarePackage('${env.envName}', session, 'storage', 'ftp', 'storage');
+    - cmd[storage]: wget -O /root/getBackups.sh ${baseUrl}/scripts/getBackups.sh; chmod +x /root/getBackups.sh;
+
 
 success:
   text: FTP storage created successfully
