@@ -1,7 +1,7 @@
 import com.hivext.api.Response;
 import com.hivext.api.utils.Random;
 import org.apache.commons.lang3.text.StrSubstitutor
-import org.jasypt.hibernate4.encryptor.HibernatePBEStringEncryptor;
+import org.json.JSONObject;
 
 function JahiaStorage(appid, session, envName, nodeGroup) {
     var TABLE_USER_CREDENTIALS = "ftpJahiaUserCredentials",
@@ -50,21 +50,30 @@ function JahiaStorage(appid, session, envName, nodeGroup) {
     };
 
     this.getUserData = function () {
-        var userData = {};
-        
-        var resp = this.getEnvs();
+        var resp = this.initUser();
         if (resp.result !== 0) return resp;
-        userData.envs = resp.keywords;
-        
-        resp = this.initUser();
-        if (resp.result !== 0) return resp;
-        userData.credentials = resp.credentials;
-        
-        userData.result = 0;
 
-        return userData;
+        var credentials = resp.credentials;
+
+        resp = this.cmd(
+            "/root/getBackups.sh '%(ftpUser)'",
+            resp.credentials
+        );
+
+        if (resp.result !== 0) return resp;
+        resp = this.toJSONObject(resp.responses[0].out);
+
+        return {
+            result : 0,
+            credentials : credentials,
+            envs : resp.envs || [],
+            backups : resp.backups || {}
+        };
     };
 
+    this.toJSONObject = function (value) {
+        return toNative(new JSONObject(String(value)));
+    };
 
     this.getBackups = function (targetEnvName) {
         var resp = this.initUser();
