@@ -312,6 +312,10 @@ function BackupManager(config) {
     function StorageApi(session, storageAppid, ftpHost) {
         var SOURCE = "remote-storage";
 
+        this.getUserData = function getUserData() {
+            return this.eval("GetUserData");
+        };
+
         this.getEnvs = function getEnvs() {
             return this.eval("GetEnvs");
         };
