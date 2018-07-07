@@ -81,6 +81,8 @@ onInstall:
 onUninstall:
   callScript: uninstall
 
+startPage: ${env.url}
+
 actions:
   installFTPClient:
     cmd [proc, es]: yum -y install lftp
