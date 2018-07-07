@@ -29,7 +29,15 @@ onInstall:
           backupDir: ${settings.backupDir}
           newEnvName: ${settings.newEnvName}
           targetRegion: ${settings.targetRegion}
-  - if (settings.envCreated == 'true'): restoreBackup
+    - return:
+        type: success
+        startPage: ${response.startPage}
+        
+  - if (settings.envCreated == 'true'): 
+      - restoreBackup
+      - return:
+          type: success
+          startPage: ${env.url}
 
 actions:
   restoreBackup:
