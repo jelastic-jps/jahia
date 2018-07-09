@@ -159,7 +159,7 @@ actions:
         service mysql stop
         wget -O /etc/my.cnf ${baseUrl}/configs/my.cnf
         service mysql start
-        wget -O setupUser.sh https://raw.githubusercontent.com/jelastic-jps/mysql-cluster/master/scripts/setupUser.sh
+        wget -O setupUser.sh ${baseUrl}/scripts/setupUser.sh
         bash setupUser.sh ${globals.db_user} ${globals.db_pass}
         mysql -u${globals.db_user} -p${globals.db_pass} -e "CREATE DATABASE IF NOT EXISTS jahia CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
       user: root 
