@@ -20,7 +20,9 @@ actions:
     - script: |
         return jelastic.env.control.InstallSoftwarePackage('${env.envName}', session, 'storage', 'ftp', 'storage');
     - cmd[storage]: wget -O /root/getBackups.sh ${baseUrl}/scripts/getBackups.sh; chmod +x /root/getBackups.sh;
-
+    - script: |
+        var db = jelastic.data.base; var tableName = "ftpJahiaUserCredentials"; var typeExists = db.GetType(tableName);
+        if (typeExists.result != 0) {db.DefineType(appid, signature, tableName, {uid: 'int', ftpUser: 'string', ftpPassword: 'string'}, "uid");}
 
 success:
   text: FTP storage created successfully
