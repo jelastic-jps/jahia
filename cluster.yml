@@ -110,16 +110,19 @@ nodes:
 
 onInstall: 
   - setupSqlDB
+  - if (settings.skipStart != 'true'): createJahiaDatabase
   - setupRedisPassword
   
   - copyApp: proc
-  - api: env.control.ExecDockerRunCmd
-    nodeId: ${nodes.proc.first.id} 
+  - if (settings.skipStart != 'true'):
+    - api: env.control.ExecDockerRunCmd
+      nodeId: ${nodes.proc.first.id} 
 
-  - copyApp: cp 
-  - forEach(nodes.cp):
-      api: env.control.ExecDockerRunCmd
-      nodeId: ${@i.id} 
+  - copyApp: cp
+  - if (settings.skipStart != 'true'): 
+    - forEach(nodes.cp):
+        api: env.control.ExecDockerRunCmd
+        nodeId: ${@i.id} 
 
   - setupUnomi
 
@@ -161,8 +164,12 @@ actions:
         service mysql start
         wget -O setupUser.sh ${baseUrl}/scripts/setupUser.sh
         bash setupUser.sh ${globals.db_user} ${globals.db_pass}
-        mysql -u${globals.db_user} -p${globals.db_pass} -e "CREATE DATABASE IF NOT EXISTS jahia CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
       user: root 
+
+  createJahiaDatabase:
+    - cmd[sqldb]: |-
+        mysql -u${globals.db_user} -p${globals.db_pass} -e "CREATE DATABASE IF NOT EXISTS jahia CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+      user: root
     - cmd[${nodes.proc.first.id}]: cat $DATA_PATH/digital-factory-data/db/sql/schema/mysql/*.sql | mysql -h mysqldb -u$DB_USER -p$DB_PASSWORD -f jahia
     
   copyApp:  

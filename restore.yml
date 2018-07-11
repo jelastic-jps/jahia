@@ -16,6 +16,8 @@ onInstall:
         jps: ${baseUrl}/cluster.yml?_r=${fn.random}
         envName: ${settings.newEnvName}
         region: ${settings.targetRegion}
+        settings:
+          skipStart: 'true'
     - install:
         jps: ${baseUrl}/restore.yml?_r=${fn.random}
         envName: ${settings.newEnvName}
@@ -43,12 +45,17 @@ actions:
   restoreBackup:
     - cmd[proc]: |-
         yum -y install lftp
-        sudo service tomcat stop
         wget -q ftp://${settings.ftpUser}:${settings.ftpPassword}@${settings.ftpHost}/${settings.envName}/${settings.backupDir}/jahia.sql
         mysql -u$DB_USER -p$DB_PASSWORD -h mysqldb < jahia.sql; rm -f jahia.sql
         rm -rf /data; wget -q ftp://${settings.ftpUser}:${settings.ftpPassword}@${settings.ftpHost}/${settings.envName}/${settings.backupDir}/data.tar.gz; 
-        tar -xf data.tar.gz -C /; rm -f data.tar.gz; sudo service tomcat start
+        tar -xf data.tar.gz -C /; rm -f data.tar.gz; 
+        cd /opt/tomcat/webapps/ROOT/WEB-INF/lib/
+        mngr_pwd=$(/usr/java/latest/bin/jjs -cp ./jahia-commons-1.0.6.jar:./jasypt-1.9.1-lite.jar -scripting <<< "print(org.jahia.commons.encryption.EncryptionUtils.pbkdf2Digest(\$ENV.MANAGER_PASSWORD, \"p\"))")
+        sed -i "s|^jahiaToolManagerPassword .*$|jahiaToolManagerPassword                               = $mngr_pwd|" $STACK_PATH/conf/digital-factory-config/jahia/jahia.properties
+        echo $SUPER_USER_PASSWORD > $DATA_PATH/digital-factory-data/root.pwd
+        chown -R tomcat:tomcat $DATA_PATH/digital-factory-data/root.pwd
       user: root
+      
     - cmd[es]: |-
         yum -y install lftp
         wget -q ftp://${settings.ftpUser}:${settings.ftpPassword}@${settings.ftpHost}/${settings.envName}/${settings.backupDir}/es.tar.gz
@@ -60,7 +67,13 @@ actions:
         curl -H $CT -X POST http://${nodes.es.master.address}:9200/_snapshot/all/snapshot/_restore
         rm -f es.tar.gz
       user: root
-    - cmd[cp]: sudo service tomcat restart
+      
+    - api: env.control.ExecDockerRunCmd
+      nodeId: ${nodes.proc.first.id}
+
+    - forEach(nodes.cp):
+        api: env.control.ExecDockerRunCmd
+        nodeId: ${@i.id}
 
 success:
   text: Application has been restored to the new environment **${settings.newEnvName}**!
