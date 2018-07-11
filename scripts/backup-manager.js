@@ -20,6 +20,7 @@ function BackupManager(config) {
      */
 
     var Response = com.hivext.api.Response,
+        EnvironmentResponse = com.hivext.api.environment.response.EnvironmentResponse,
         ScriptEvalResponse = com.hivext.api.development.response.ScriptEvalResponse,
         Transport = com.hivext.api.core.utils.Transport,
         Random = com.hivext.api.utils.Random,
@@ -76,9 +77,13 @@ function BackupManager(config) {
         var backupDir = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").format(new Date()),
             lftp = new Lftp(config.ftpHost, config.ftpUser, config.ftpPassword),
             isManual = !getParam("task");
-        if (isManual) backupDir += "-manual";
+
+        if (isManual) {
+            backupDir += "-manual";
+        }
 
         return me.exec([
+            [ me.checkEnvStatus ],
             [ me.cmd, [
                 lftp.cmd([
                     "mkdir %(envName)",
@@ -122,6 +127,17 @@ function BackupManager(config) {
                 backupDir : backupDir
             }]
         ]);
+    };
+
+    me.checkEnvStatus = function checkEnvStatus() {
+        if (!nodeManager.isEnvRunning()) {
+            return {
+                result : EnvironmentResponse.ENVIRONMENT_NOT_RUNNING,
+                error : _("env [%(name)] not running", {name : config.envName})
+            };
+        }
+
+        return { result : 0 };
     };
 
     me.getCredentials = function () {
@@ -266,7 +282,32 @@ function BackupManager(config) {
     };
 
     function NodeManager(envName, nodeId, baseDir, logPath) {
-        var me = this;
+        var ENV_STATUS_TYPE_RUNNING = 1,
+            me = this,
+            envInfo;
+
+        me.isEnvRunning = function () {
+            var resp = me.getEnvInfo();
+
+            if (resp.result != 0) {
+                throw new Error("can't get environment info: " + toJSON(resp));
+            }
+
+            return resp.env.status == ENV_STATUS_TYPE_RUNNING;
+        };
+
+        me.getEnvInfo = function () {
+            var resp;
+
+            if (!envInfo) {
+                resp = jelastic.env.control.GetEnvInfo(envName, session);
+                if (resp.result != 0) return resp;
+
+                envInfo = resp;
+            }
+
+            return envInfo;
+        };
 
         me.cmd = function (cmd, values, sep, disableLogging) {
             var resp,
