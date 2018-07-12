@@ -11,7 +11,7 @@ function replaceText(text, values) {
 };
 
 function createScript(scriptName) {
-    var url = "https://raw.githubusercontent.com/SiryjVyiko/jahia/master/scripts/storage/" + scriptName;
+    var url = "https://raw.githubusercontent.com/jelastic-jps/jahia/master/scripts/storage/" + scriptName;
 
     try {
         scriptBody = new Transport().get(url);
