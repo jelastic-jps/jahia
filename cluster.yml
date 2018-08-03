@@ -26,7 +26,7 @@ globals:
     -DMANAGER_USER=${MANAGER_USER}
     -DMANAGER_PASSWORD=${MANAGER_PASSWORD}
     -DSUPER_USER_PASSWORD=${SUPER_USER_PASSWORD}
-    -DHOST_NAME=$(hostname -s)
+    -DHOST_NAME=$(hostname)
     -XX:MaxPermSize=512m
   
  
