@@ -6,7 +6,7 @@ id: jahia-dem
 description:
   short: Jahia - Digital Experience Manager Backup Storage
   text: Creates the FTP server for storing the user backups
-baseUrl: https://raw.githubusercontent.com/SiryjVyiko/jelastic-jps/master
+baseUrl: https://raw.githubusercontent.com/jelastic-jps/jahia/master
 
 nodes:
   - nodeType: storage
