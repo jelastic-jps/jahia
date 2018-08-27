@@ -1,4 +1,4 @@
-mport org.apache.commons.lang3.text.StrSubstitutor;
+import org.apache.commons.lang3.text.StrSubstitutor;
 
 StrSubstitutor = org.apache.commons.lang3.text.StrSubstitutor;
 Transport = com.hivext.api.core.utils.Transport
