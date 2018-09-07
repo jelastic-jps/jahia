@@ -19,6 +19,8 @@ function setJahiaSystemProperty(propertyName, propertyValue) {
         resellerId: 0
     });
 
+    if (jahiaProperty.result != 0) return jahiaProperty;
+
     if (jahiaProperty.objects.length === 0) {
         resp = db.CreateObject("settings", signature, "Settings", {
             expert: "EXPERT",
@@ -88,7 +90,8 @@ if (typeExists.result != 0) {
 var scriptsToInstall = ["GetBackups", "GetEnvs", "GetUserData", "InitFtpCredentials", "lib/JahiaStorage"],
     script;
 for (var i = 0, n = scriptsToInstall.length; i < n; i++) {
-    createScript(scriptsToInstall[i]);
+    resp = createScript(scriptsToInstall[i]);
+    if (resp.result != 0) return resp;
 }
 
 resp = setJahiaSystemProperty("JAHIA_STORAGE_FTP_HOST", storageApplicationIp);
