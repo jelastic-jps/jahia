@@ -35,7 +35,7 @@ function setJahiaSystemProperty(propertyName, propertyValue) {
 }
 
 function createScript(scriptName) {
-    var url = "https://raw.githubusercontent.com/jelastic-jps/jahia/master/scripts/storage/" + scriptName;
+    var url = "${baseUrl}/scripts/storage/" + scriptName;
 
     try {
         scriptBody = new Transport().get(url);
