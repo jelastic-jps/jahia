@@ -13,32 +13,27 @@ function replaceText(text, values) {
 };
 
 function setJahiaSystemProperty(propertyName, propertyValue) {
-    try {
-        var jahiaProperty = db.GetObjectsByCriteria("settings", signature, "Settings", {
-            name: propertyName,
-            resellerId: 0
-        });
 
-        if (jahiaProperty.objects.length === 0) {
-            resp = db.CreateObject("settings", signature, "Settings", {
-                expert: "EXPERT",
-                name: propertyName,
-                value: propertyValue
-            });
-        } else {
-            resp = db.SetProperty("settings", signature, "Settings", jahiaProperty.objects[0].id, "value", propertyValue);
-        }
-    } catch (ex) {
-        resp = {
-            error: toJSON(ex)
-        };
+    var jahiaProperty = db.GetObjectsByCriteria("settings", signature, "Settings", {
+        name: propertyName,
+        resellerId: 0
+    });
+
+    if (jahiaProperty.objects.length === 0) {
+        resp = db.CreateObject("settings", signature, "Settings", {
+            expert: "EXPERT",
+            name: propertyName,
+            value: propertyValue
+        });
+    } else {
+        resp = db.SetProperty("settings", signature, "Settings", jahiaProperty.objects[0].id, "value", propertyValue);
     }
 
     return resp;
 }
 
 function createScript(scriptName) {
-    var url = "https://raw.githubusercontent.com/jelastic-jps/jahia/master/scripts/storage/" + scriptName;
+    var url = "https://raw.githubusercontent.com/SiryjVyiko/jahia/master/scripts/storage/" + scriptName;
 
     try {
         scriptBody = new Transport().get(url);
@@ -61,9 +56,11 @@ function createScript(scriptName) {
     return resp;
 };
 
-var appsList = jelastic.development.applications.GetApps().apps;
+var appsResponse = jelastic.development.applications.GetApps()
+if (appsResponse.result != 0) return appsResponse;
+var appsList = appsResponse.apps;
 var storageApplicationAppId;
-for (var i = 0; i < appsList.length; i++) {
+for (var i = 0, n = appsList.length; i < n; i++) {
     if (appsList[i].name == "JahiaStorageApp") {
 
         storageApplicationId = appsList[i].appid;
@@ -90,12 +87,14 @@ if (typeExists.result != 0) {
 
 var scriptsToInstall = ["GetBackups", "GetEnvs", "GetUserData", "InitFtpCredentials", "lib/JahiaStorage"],
     script;
-for (var i = 0; i < scriptsToInstall.length; i++) {
+for (var i = 0, n = scriptsToInstall.length; i < n; i++) {
     createScript(scriptsToInstall[i]);
 }
 
-setJahiaSystemProperty("JAHIA_STORAGE_FTP_HOST", storageApplicationIp);
-setJahiaSystemProperty("JAHIA_STORAGE_APPID", storageApplicationId);
+resp = setJahiaSystemProperty("JAHIA_STORAGE_FTP_HOST", storageApplicationIp);
+if (resp.result != 0) return resp;
+resp = setJahiaSystemProperty("JAHIA_STORAGE_APPID", storageApplicationId);
+if (resp.result != 0) return resp;
 
 return {
     result: 0
