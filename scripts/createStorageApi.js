@@ -1,9 +1,8 @@
 import org.apache.commons.lang3.text.StrSubstitutor;
-
-StrSubstitutor = org.apache.commons.lang3.text.StrSubstitutor;
-Transport = com.hivext.api.core.utils.Transport
+import com.hivext.api.core.utils.Transport;
 
 var config = {};
+var storageAppName = "JahiaStorageApp";
 var storageApplicationId = "";
 var storageApplicationIp = '${nodes.storage.first.intIP}';
 config.storageEnvName = '${env.envName}';
@@ -63,14 +62,14 @@ if (appsResponse.result != 0) return appsResponse;
 var appsList = appsResponse.apps;
 var storageApplicationAppId;
 for (var i = 0, n = appsList.length; i < n; i++) {
-    if (appsList[i].name == "JahiaStorageApp") {
+    if (appsList[i].name == storageAppName) {
 
         storageApplicationId = appsList[i].appid;
     }
 }
 
 if (storageApplicationId.length === 0) {
-    var storageApplication = jelastic.development.applications.GenerateApp("JahiaStorageApp")
+    var storageApplication = jelastic.development.applications.GenerateApp(storageAppName)
     if (storageApplication.result != 0) return storageApplication;
     storageApplicationId = storageApplication.appid;
 }
