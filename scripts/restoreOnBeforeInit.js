@@ -1,11 +1,9 @@
 //@auth
 
-var storage = new StorageApi(session);
+var baseUrl = "https://raw.githubusercontent.com/SiryjVyiko/jahia/master";
 
+var storage = use("scripts/useStorageApi.js");
 var userData = storage.getUserData();
-var ftpUser = userData.credentials.ftpUser;
-var ftpPassword = userData.credentials.ftpPassword;
-
 var envs = prepareEnvs(userData.envs);
 var backups = prepareBackups(userData.backups);
 
@@ -19,21 +17,6 @@ jelastic.local.returnResult({
             "required": true,
             "default": (envs[0] || {}).value || "",
             "values": envs
-        }, {
-            "type": "string",
-            "inputType": "hidden",
-            "name": "ftpUser",
-            "default": ftpUser
-        }, {
-            "type": "string",
-            "inputType": "hidden",
-            "name": "ftpHost",
-            "default": storage.getFtpHost()
-        }, {
-            "type": "string",
-            "inputType": "hidden",
-            "name": "ftpPassword",
-            "default": ftpPassword
         }, {
             "caption": "Backup",
             "type": "list",
@@ -58,6 +41,14 @@ jelastic.local.returnResult({
         }]
     }
 });
+
+function use(script) {
+    var Transport = com.hivext.api.core.utils.Transport,
+        body = new Transport().get(baseUrl + "/" + script + "?_r=" + Math.random());
+    var debug = baseUrl + "/" + script + "?_r=" + Math.random();    
+
+    return new (new Function("return " + body)())(session);
+}
 
 function prepareEnvs(values) {
     var aResultValues = [];
@@ -88,76 +79,4 @@ function prepareBackups(backups) {
     }
 
     return oResultBackups;
-}
-
-function StorageApi(session, storageAppid, ftpHost) {
-    var SOURCE = "remote-storage";
-
-    this.getUserData = function getUserData() {
-        return this.eval("GetUserData");
-    };
-
-    this.getEnvs = function getEnvs() {
-        return this.eval("GetEnvs");
-    };
-
-    this.getBackups = function getBackups(envName) {
-        return this.eval("GetBackups", {
-            envName: envName
-        });
-    };
-
-    this.initFtpCredentials = function initFtpCredentials() {
-        return this.eval("InitFtpCredentials");
-    };
-
-    this.getStorageAppid = function () {
-        return storageAppid;
-    };
-
-    this.getFtpHost = function getFtpHost() {
-        return ftpHost;
-    };
-
-    this.eval = function (method, params) {
-        var resp = jelastic.development.scripting.Eval(appid + "/" + storageAppid, session, method, params || {});
-        resp = resp.response || resp;
-
-        if (resp.result !== 0) {
-            resp.method = method;
-            resp.source = SOURCE;
-        }
-
-        return resp;
-    };
-
-    this.initSettings = function () {
-        var resp = jelastic.development.scripting.Eval(appid + "/settings", session, "GetSettings", {
-            settings: "JAHIA_STORAGE_APPID,JAHIA_STORAGE_FTP_HOST"
-        });
-
-        resp = resp.response || resp;
-
-        if (resp.result !== 0) {
-            throw new Error("Cannot get settings [JAHIA_STORAGE_APPID, JAHIA_STORAGE_FTP_HOST]: " + toJSON(resp));
-        }
-
-        if (!storageAppid) {
-            storageAppid = resp.settings.JAHIA_STORAGE_APPID;
-
-            if (!storageAppid) {
-                throw new Error("JAHIA_STORAGE_APPID setting not found");
-            }
-        }
-
-        if (!ftpHost) {
-            ftpHost = resp.settings.JAHIA_STORAGE_FTP_HOST;
-
-            if (!ftpHost) {
-                throw new Error("JAHIA_STORAGE_FTP_HOST setting not found");
-            }
-        }
-    };
-
-    this.initSettings();
 }

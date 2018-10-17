@@ -6,9 +6,9 @@ id: jahia-dem
 description:
   short: Jahia - Digital Experience Manager Restore
   text: Allows to restore your Jahia environment from existing backup
-baseUrl: https://raw.githubusercontent.com/jelastic-jps/jahia/master
+baseUrl: https://raw.githubusercontent.com/SiryjVyiko/jahia/master
 
-onBeforeInit: https://raw.githubusercontent.com/jelastic-jps/jahia/master/scripts/restoreOnBeforeInit.js
+onBeforeInit: https://raw.githubusercontent.com/SiryjVyiko/jahia/master/scripts/restoreOnBeforeInit.js
 
 onInstall:
   - if (settings.envCreated != 'true'):
@@ -33,29 +33,33 @@ onInstall:
         startPage: ${response.startPage}
         
   - if (settings.envCreated == 'true'): 
-      - restoreBackup
-      - return:
-          type: success
-          startPage: ${env.url}
+     - script: ${baseUrl}/scripts/getFtpCredentials.js?_r=${fn.random}
+     - restoreBackup:
+         ftpUser: ${response.ftpUser}
+         ftpPassword: ${response.ftpPassword}
+         ftpHost: ${response.ftpHost}
+     - return:
+         type: success
+         startPage: ${env.url}
 
 actions:
   restoreBackup:
     - cmd[proc]: |-
         yum -y install lftp
-        wget -q ftp://${settings.ftpUser}:${settings.ftpPassword}@${settings.ftpHost}/${settings.envName}/${settings.backupDir}/jahia.sql
+        wget -q ftp://${this.ftpUser}:${this.ftpPassword}@${this.ftpHost}/${settings.envName}/${settings.backupDir}/jahia.sql
         mysql -u$DB_USER -p$DB_PASSWORD -h mysqldb < jahia.sql; rm -f jahia.sql
-        rm -rf /data; wget -q ftp://${settings.ftpUser}:${settings.ftpPassword}@${settings.ftpHost}/${settings.envName}/${settings.backupDir}/data.tar.gz; 
+        rm -rf /data; wget -q ftp://${this.ftpUser}:${this.ftpPassword}@${this.ftpHost}/${settings.envName}/${settings.backupDir}/data.tar.gz; 
         tar -xf data.tar.gz -C /; rm -f data.tar.gz; 
         cd /opt/tomcat/webapps/ROOT/WEB-INF/lib/
         mngr_pwd=$(/usr/java/latest/bin/jjs -cp ./jahia-commons-1.0.6.jar:./jasypt-1.9.1-lite.jar -scripting <<< "print(org.jahia.commons.encryption.EncryptionUtils.pbkdf2Digest(\$ENV.MANAGER_PASSWORD, \"p\"))")
-        sed -i "s|^jahiaToolManagerPassword .*$|jahiaToolManagerPassword                               = $mngr_pwd|" $STACK_PATH/conf/digital-factory-config/jahia/jahia.properties
+        sed -i "s|^jahiaToolManagerPassword .*$|jahiaToolManagerPassword = $mngr_pwd|" $STACK_PATH/conf/digital-factory-config/jahia/jahia.properties
         echo $SUPER_USER_PASSWORD > $DATA_PATH/digital-factory-data/root.pwd
         chown -R tomcat:tomcat $DATA_PATH/digital-factory-data/root.pwd
       user: root
       
     - cmd[es]: |-
         yum -y install lftp
-        wget -q ftp://${settings.ftpUser}:${settings.ftpPassword}@${settings.ftpHost}/${settings.envName}/${settings.backupDir}/es.tar.gz
+        wget -q ftp://${this.ftpUser}:${this.ftpPassword}@${this.ftpHost}/${settings.envName}/${settings.backupDir}/es.tar.gz
         tar -xf es.tar.gz -C /
         chown -R elasticsearch:elasticsearch /var/lib/elasticsearch/backup/
         CT='Content-Type:application/json'
