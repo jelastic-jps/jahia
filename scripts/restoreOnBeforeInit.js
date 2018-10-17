@@ -1,6 +1,6 @@
 //@auth
 
-var baseUrl = "https://raw.githubusercontent.com/SiryjVyiko/jahia/master";
+var baseUrl = "${baseUrl}";
 
 var storage = use("scripts/useStorageApi.js");
 var userData = storage.getUserData();
