@@ -6,9 +6,9 @@ id: jahia-dem
 description:
   short: Jahia - Digital Experience Manager Restore
   text: Allows to restore your Jahia environment from existing backup
-baseUrl: https://raw.githubusercontent.com/SiryjVyiko/jahia/master
+baseUrl: https://raw.githubusercontent.com/jelastic-jps/jahia/master
 
-onBeforeInit: https://raw.githubusercontent.com/SiryjVyiko/jahia/master/scripts/restoreOnBeforeInit.js
+onBeforeInit: https://raw.githubusercontent.com/jelastic-jps/jahia/master/scripts/restoreOnBeforeInit.js
 
 onInstall:
   - if (settings.envCreated != 'true'):
