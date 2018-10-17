@@ -1,6 +1,6 @@
 //@auth
 
-var baseUrl = "${baseUrl}";
+var baseUrl = "https://raw.githubusercontent.com/jelastic-jps/jahia/master/";
 
 var storage = use("scripts/useStorageApi.js");
 var userData = storage.getUserData();
