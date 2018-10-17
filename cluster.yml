@@ -174,9 +174,8 @@ actions:
     
   copyApp:  
     - cmd[${this}]: |-
-        [ "${this}" == "proc" ] && role="processing" || role="browsing" 
         rm -rf $STACK_PATH/webapps/*
-        cp -rf $DATA_PATH/jahia/$role/tomcat/webapps/* $STACK_PATH/webapps
+        cp -rf $DATA_PATH/jahia/tomcat/webapps/* $STACK_PATH/webapps
         chown -R tomcat:tomcat $STACK_PATH/webapps
         
         cd /opt/tomcat/webapps/ROOT/WEB-INF/lib/
