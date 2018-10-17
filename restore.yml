@@ -24,9 +24,6 @@ onInstall:
         region: ${settings.targetRegion}
         settings:
           envCreated: 'true'
-          ftpUser: ${settings.ftpUser}
-          ftpPassword: ${settings.ftpPassword}
-          ftpHost: ${settings.ftpHost}
           envName: ${settings.envName}
           backupDir: ${settings.backupDir}
           newEnvName: ${settings.newEnvName}
