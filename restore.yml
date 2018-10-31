@@ -15,13 +15,13 @@ onInstall:
     - install:
         jps: ${baseUrl}/cluster.yml?_r=${fn.random}
         envName: ${settings.newEnvName}
-        region: ${settings.targetRegion}
+        region: user1
         settings:
           skipStart: 'true'
     - install:
         jps: ${baseUrl}/restore.yml?_r=${fn.random}
         envName: ${settings.newEnvName}
-        region: ${settings.targetRegion}
+        region: user1
         settings:
           envCreated: 'true'
           envName: ${settings.envName}
