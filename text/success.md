@@ -11,4 +11,9 @@
 ### DB User 
 - Login: ${globals.db_user}
 - Password ${globals.db_pass}
-- [https://${nodes.sqldb.first.id}-${env.domain}/](https://node${nodes.sqldb.first.id}-${env.domain}/) 
+- [https://${nodes.sqldb.first.id}-${env.domain}/](https://node${nodes.sqldb.first.id}-${env.domain}/)
+
+### Redis User 
+- Login: admin
+- Password ${globals.redis_pass}
+- [https://${nodes.nosqldb.first.id}-${env.domain}/](https://node${nodes.nosqldb.first.id}-${env.domain}/) 
