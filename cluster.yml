@@ -83,7 +83,7 @@ nodes:
     nodeGroup: nosqldb
 
 
-  - nodeType: mariadb-dockerized
+  - nodeType: mariadb10
     tag: 10.2.12
     displayName: MariaDB
     count: 1
