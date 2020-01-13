@@ -126,6 +126,10 @@ onInstall:
         nodeId: ${@i.id} 
 
   - setupUnomi
+  - forEach(item:env.nodes):
+      cmd[${@item.id}]: |-
+        [ -e /var/log/grubby_prune_debug ] && rm -f /var/log/grubby_prune_debug || true;
+      user: root
 
 onAfterRedeployContainer[proc]:
   - setJahiaAppPasswords: proc
