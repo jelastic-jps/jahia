@@ -195,7 +195,9 @@ actions:
     - cmd[${this}]: |-
         chown -R tomcat:tomcat $STACK_PATH/webapps      
         cd $STACK_PATH/webapps/ROOT/WEB-INF/lib/
-        mngr_pwd=$(/usr/java/latest/bin/jjs -cp ./jahia-commons-1.0.6.jar:./jasypt-1.9.1-lite.jar -scripting <<< "print(org.jahia.commons.encryption.EncryptionUtils.pbkdf2Digest(\$ENV.MANAGER_PASSWORD, \"p\"))")
+        JAHIA_COMMONS_JAR=$(ls -1 jahia-commons-[0-9.]*.jar|tail -n 1)
+        JASYPT_JAR=$(ls -1 jasypt-[0-9.]*.jar|tail -n 1)
+        mngr_pwd=$(/usr/java/latest/bin/jjs -cp ./${JAHIA_COMMONS_JAR}:./${JASYPT_JAR} -scripting <<< "print(org.jahia.commons.encryption.EncryptionUtils.pbkdf2Digest(\$ENV.MANAGER_PASSWORD, \"p\"))")
         sed -i "s|^jahiaToolManagerPassword .*$|jahiaToolManagerPassword = $mngr_pwd|" $STACK_PATH/conf/digital-factory-config/jahia/jahia.properties
         echo $SUPER_USER_PASSWORD > $DATA_PATH/digital-factory-data/root.pwd
         chown -R tomcat:tomcat $DATA_PATH/digital-factory-data/root.pwd
