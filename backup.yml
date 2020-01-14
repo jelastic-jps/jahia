@@ -80,6 +80,9 @@ onInstall:
 
 onUninstall:
   callScript: uninstall
+
+onBeforeDelete:
+  callScript: uninstall
   
 onAfterRedeployContainer[proc]:
 - cmd [proc]: yum -y install lftp
