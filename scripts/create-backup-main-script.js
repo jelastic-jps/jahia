@@ -6,6 +6,7 @@ var scriptName        = getParam("scriptName", "${env.envName}-jahia-backup"),
     envAppid          = getParam("envAppid", "${env.appid}"),
     ftpUser           = getParam("ftpUser", ""),
     ftpPassword       = getParam("ftpPassword", ""),
+    userId            = getparam("userId", ""),
     maintenanceHost   = getParam("maintenanceHost", "${nodes.proc.master.address}"),
     elasticSearchHost = getParam("elasticSearchHost", "${nodes.es.master.address}"),
     backupCount       = getParam("backupCount", "5");
@@ -14,7 +15,7 @@ function run() {
     var BackupManager = use("scripts/backup-manager.js", {
         session           : session,
         baseUrl           : baseUrl,
-        uid               : user.uid,
+        uid               : userId,
         cronTime          : cronTime,
         scriptName        : scriptName,
         envName           : envName,
